@@ -11,12 +11,17 @@
    ========================================================= */
 (function () {
   const STORAGE_KEY = 'tm-cart';
-  const SEND_URL = 'send.php';
+  // Корень сайта — от адреса этого скрипта (/js/cart.js). Так ссылки и отправка заявки
+  // работают с любой страницы: с главной, из каталога и со страниц /catalog/<раздел>/.
+  const ROOT = new URL('../', document.currentScript.src).href;
+  const SEND_URL = ROOT + 'send.php';
   const PHONE = '8 800 600-13-96';
   const PHONE_HREF = 'tel:88006001396';
   const EMAIL = 'zakaz@tmstal.ru';
   const UNITS = ['т', 'кг', 'м', 'м²', 'шт'];
   const IS_LOCAL = ['localhost', '127.0.0.1', ''].includes(location.hostname);
+  // временная ссылка для показа (Netlify и т. п.): PHP там нет, письма не уходят — говорим об этом прямо
+  const IS_PREVIEW = !IS_LOCAL && !/(^|\.)tmstal\.ru$/.test(location.hostname);
 
   const ICON = {
     close: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
@@ -30,10 +35,19 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /* ---------- данные корзины ---------- */
+  // Единица по умолчанию: металл — тонны, кабель и трос — метры и т.д. Клиент может поменять.
+  const DEFAULT_UNIT = {
+    'cat-cable': 'м', 'cat-wires': 'м', 'cat-rope': 'м', 'cat-mesh': 'м²',
+    'cat-polymers': 'кг', 'cat-fasteners': 'кг', 'cat-fittings': 'шт',
+  };
   const byId = {};
   (window.CATALOG || []).forEach((cat) => cat.items.forEach((item) => {
     // марки позиции, а если их нет — общие марки раздела (лист, нержавейка)
-    byId[item.id] = { name: item.name, cat: cat.title, grades: item.grades || cat.grades || [] };
+    byId[item.id] = {
+      name: item.name, cat: cat.title, grades: item.grades || cat.grades || [],
+      gradeLabel: cat.gradeLabel || 'Марка', sizes: item.sizes || [], sizeLabel: item.sizeLabel || 'Размер',
+      unit: DEFAULT_UNIT[cat.id] || 'т',
+    };
   }));
 
   // строка заявки: { uid, id, grade, qty, unit, note } — одна позиция может быть в нескольких марках
@@ -49,16 +63,46 @@
   const inCart = (id) => cart.some((row) => row.id === id);
   const findRow = (id, grade) => cart.find((row) => row.id === id && row.grade === grade);
 
+  // цель для Яндекс Метрики (js/analytics.js)
+  const goal = (name, params) => document.dispatchEvent(new CustomEvent('tm:goal', { detail: { name, params } }));
+
   function add(id, grade = '') {
     if (!byId[id] || findRow(id, grade)) return;
-    cart.push({ uid: uid(), id, grade, qty: '', unit: (window.PRICES[id] && window.PRICES[id].unit) || 'т', note: '' });
+    goal('add_to_request', { item: byId[id].name, grade });
+    cart.push({ uid: uid(), id, grade, qty: '', unit: (window.PRICES[id] && window.PRICES[id].unit) || byId[id].unit, note: '' });
     save();
   }
   // клик по марке в каталоге: добавить строку с этой маркой или убрать её
   function toggleGrade(id, grade) {
-    const row = findRow(id, grade);
-    if (row) removeRow(row.uid);
+    const withGrade = findRow(id, grade);
+    if (withGrade) {
+      // марку убираем; если в строке остался размер — строка остаётся
+      if (withGrade.note) { withGrade.grade = ''; save(); renderItems(); }
+      else removeRow(withGrade.uid);
+      return;
+    }
+    // есть строка этой позиции без марки (например, выбран только размер) — ставим марку в неё
+    const empty = [...cart].reverse().find((row) => row.id === id && !row.grade);
+    if (empty) { empty.grade = grade; save(); renderItems(); bump(); }
     else { add(id, grade); bump(); }
+  }
+  // клик по размеру в каталоге: подставить размер в строку этой позиции без размера,
+  // иначе — новая строка; повторный клик убирает размер
+  function toggleSize(id, size) {
+    const withSize = cart.find((row) => row.id === id && row.note === size);
+    if (withSize) {
+      if (withSize.grade) { withSize.note = ''; save(); renderItems(); }
+      else removeRow(withSize.uid);
+      return;
+    }
+    const empty = [...cart].reverse().find((row) => row.id === id && !row.note);
+    if (empty) empty.note = size;
+    else {
+      if (!byId[id]) return;
+      cart.push({ uid: uid(), id, grade: '', qty: '', unit: (window.PRICES[id] && window.PRICES[id].unit) || byId[id].unit, note: size });
+      goal('add_to_request', { item: byId[id].name, size });
+    }
+    save(); renderItems(); bump();
   }
   function removeRow(rowUid) {
     cart = cart.filter((row) => row.uid !== rowUid);
@@ -70,7 +114,7 @@
   const consent = (id) => `
     <label class="consent">
       <input type="checkbox" name="consent" required id="${id}">
-      <span>Согласен на обработку персональных данных в соответствии с <a href="privacy.html" target="_blank">политикой</a></span>
+      <span>Согласен на обработку персональных данных в соответствии с <a href="${ROOT}privacy.html" target="_blank">политикой</a></span>
     </label>`;
 
   document.body.insertAdjacentHTML('beforeend', `
@@ -87,7 +131,7 @@
         <div class="cart-empty" id="cart-empty">
           <b>Позиций пока нет</b>
           <p>Добавьте товары из каталога кнопкой «В заявку» или просто опишите, что нужно, в комментарии ниже.</p>
-          <a class="btn btn--outline" href="catalog.html">Перейти в каталог</a>
+          <a class="btn btn--outline" href="${ROOT}catalog.html">Перейти в каталог</a>
         </div>
 
         <form class="form" id="order-form" novalidate>
@@ -193,7 +237,10 @@
       btn.innerHTML = added ? `${ICON.check} В заявке` : 'В заявку';
     });
     document.querySelectorAll('[data-grade]').forEach((btn) => {
-      btn.setAttribute('aria-pressed', !!findRow(btn.dataset.item, btn.dataset.grade));
+      btn.setAttribute('aria-pressed', cart.some((row) => row.id === btn.dataset.item && row.grade === btn.dataset.grade));
+    });
+    document.querySelectorAll('[data-size]').forEach((btn) => {
+      btn.setAttribute('aria-pressed', cart.some((row) => row.id === btn.dataset.item && row.note === btn.dataset.size));
     });
   }
 
@@ -219,10 +266,13 @@
             </select>
             ${item.grades.length ? `
             <select data-field="grade" aria-label="Марка стали">
-              <option value="">Марка: любая</option>
+              <option value="">${esc(item.gradeLabel)}: не важно</option>
               ${item.grades.map((g) => `<option${g === row.grade ? ' selected' : ''}>${esc(g)}</option>`).join('')}
             </select>` : '<span></span>'}
-            <input class="cart-item__note" placeholder="Размер, например 40×20×2 мм, 6 м" value="${esc(row.note)}" data-field="note" aria-label="Размер">
+            <input class="cart-item__note" value="${esc(row.note)}" data-field="note"
+                   placeholder="${item.sizes.length ? `${esc(item.sizeLabel)}: выберите или впишите` : 'Размер, например 40×20×2 мм, 6 м'}"
+                   ${item.sizes.length ? `list="sizes-${row.uid}"` : ''} aria-label="${esc(item.sizeLabel)}" autocomplete="off">
+            ${item.sizes.length ? `<datalist id="sizes-${row.uid}">${item.sizes.map((z) => `<option value="${esc(z)}">`).join('')}</datalist>` : ''}
           </div>
         </li>`;
     }).join('');
@@ -280,6 +330,9 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) { close(); return; }
+
+    const sizeBtn = e.target.closest('[data-size]');
+    if (sizeBtn) { toggleSize(sizeBtn.dataset.item, sizeBtn.dataset.size); return; }
 
     const gradeBtn = e.target.closest('[data-grade]');
     if (gradeBtn) { toggleGrade(gradeBtn.dataset.item, gradeBtn.dataset.grade); return; }
@@ -382,6 +435,8 @@
         // На локальном сервере нет PHP — показываем, что ушло бы в письме
         console.info('[тестовый режим] письмо не отправлено, данные заявки:', payload);
         success(form, type);
+      } else if (IS_PREVIEW) {
+        fail(`Это предварительная версия сайта — отсюда заявки пока не отправляются. Позвоните ${PHONE} или напишите на ${EMAIL}.`);
       } else {
         fail(`Не удалось отправить. Позвоните ${PHONE} или напишите на ${EMAIL}.`);
       }
@@ -391,6 +446,8 @@
   }
 
   function success(form, type) {
+    goal(type === 'callback' ? 'callback_sent'
+      : (form.elements.wholesale && form.elements.wholesale.checked ? 'wholesale_sent' : 'order_sent'));
     const box = form.closest('.drawer, .modal');
     (type === 'order' ? box.querySelector('.drawer__body') : form).hidden = true;
     box.querySelector('.done').hidden = false;

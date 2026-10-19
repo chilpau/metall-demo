@@ -1,65 +1,28 @@
 /* =========================================================
-   Страница «Весь каталог»: рендер из js/catalog-data.js,
-   фильтр, подсветка текущего раздела, переход по якорю.
+   Страница «Весь каталог»: каталог уже в HTML (генерируется
+   tools/catalog/build_catalog.py), здесь — фильтр, цены, «ещё N»,
+   подсветка текущего раздела, переход по якорю.
    ========================================================= */
 (function () {
   const CATALOG = window.CATALOG;
   const norm = window.normalizeQuery;
-  const GRADES_VISIBLE = 8;
   const DOC = '<svg class="icon" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 12v6M9 15l3 3 3-3"/></svg>';
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-  // itemId задан — марки становятся кнопками «добавить в заявку с этой маркой»
-  function gradesList(grades, label, itemId) {
-    if (!grades || !grades.length) return '';
-    const hidden = grades.length - GRADES_VISIBLE;
-    return `
-      <div class="grades">
-        ${label ? `<span class="grades__label">${label}</span>` : ''}
-        <ul class="grades__list${hidden > 0 ? ' is-collapsed' : ''}">
-          ${grades.map((g, i) => `<li${i >= GRADES_VISIBLE ? ' class="grades__extra"' : ''}>${itemId
-            ? `<button class="grade" type="button" data-item="${itemId}" data-grade="${esc(g)}" aria-pressed="false" title="Добавить в заявку: ${esc(g)}">${esc(g)}</button>`
-            : esc(g)}</li>`).join('')}
-          ${hidden > 0 ? `<li class="grades__toggle"><button type="button" data-more="${hidden}">ещё ${hidden}</button></li>` : ''}
-        </ul>
-      </div>`;
-  }
+  const plural = (n, one, few, many) => {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
+  };
 
   /* ---------- рендер ---------- */
   const list = document.getElementById('cat-list');
   const navList = document.getElementById('cat-nav');
 
-  list.innerHTML = CATALOG.map((cat) => `
-    <section class="cat-section" id="${cat.id}" data-cat="${cat.id}">
-      <header class="cat-section__head">
-        <svg class="cat-section__img" viewBox="0 0 200 140" aria-hidden="true"><use href="#${cat.ill}"/></svg>
-        <div>
-          <h2 class="cat-section__title">${esc(cat.title)}</h2>
-          <p class="cat-section__text">${esc(cat.text)}</p>
-          ${cat.pdf ? `<a class="cat-section__pdf" href="${encodeURI(cat.pdf.url)}" target="_blank" rel="noopener">${DOC} Каталог «${esc(cat.pdf.name)}», PDF</a>` : ''}
-        </div>
-      </header>
-      ${gradesList(cat.grades, 'Марки стали — выберите нужную в заявке')}
-      <div class="items">
-        ${cat.items.map((item) => `
-          <article class="item" id="${item.id}"
-                   data-search="${esc(norm(`${item.name} ${cat.title} ${item.note || ''} ${(item.grades || []).join(' ')} ${(cat.grades || []).join(' ')}`))}">
-            <h3 class="item__name">${esc(item.name)}</h3>
-            ${item.note ? `<p class="item__note">${esc(item.note)}</p>` : ''}
-            ${gradesList(item.grades, '', item.id)}
-            <div class="item__foot">
-              <span class="item__price" data-price="${item.id}">Цена по запросу</span>
-              <button class="btn-add" type="button" data-add="${item.id}">В заявку</button>
-            </div>
-          </article>`).join('')}
-      </div>
-    </section>`).join('');
-
-  navList.innerHTML = CATALOG.map((cat) => `
-    <li><a href="#${cat.id}" data-nav="${cat.id}">
-      <span>${esc(cat.title)}</span><small>${cat.items.length}</small>
-    </a></li>`).join('');
+  // Разделы, позиции и меню уже лежат в catalog.html готовым HTML —
+  // их генерирует tools/catalog/build_catalog.py, чтобы каталог видели поисковики.
 
   const pdfs = [window.CATALOG_PDF];
   document.getElementById('pdf-links').innerHTML = pdfs.map((p) =>
@@ -69,7 +32,7 @@
   const stats = document.getElementById('catalog-stats');
   const setStats = (found) => {
     stats.textContent = found === null
-      ? `${CATALOG.length} разделов · ${total} позиций`
+      ? `${CATALOG.length} ${plural(CATALOG.length, 'раздел', 'раздела', 'разделов')} · ${total} ${plural(total, 'позиция', 'позиции', 'позиций')}`
       : `Найдено позиций: ${found}`;
   };
   setStats(null);
@@ -101,7 +64,7 @@
   const sections = [...list.querySelectorAll('.cat-section')];
 
   function applyFilter() {
-    const words = norm(input.value.trim()).split(/[\s,]+/).filter(Boolean)
+    const words = norm(input.value.trim()).split(/\s+/).filter(Boolean)
       .map((w) => (w.length > 5 ? w.slice(0, -2) : w.length > 4 ? w.slice(0, -1) : w));
     clear.hidden = !words.length;
 

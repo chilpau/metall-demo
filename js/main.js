@@ -1,4 +1,21 @@
 /* =========================================================
+   Сайт открыт файлом с диска (двойной клик по index.html):
+   браузер не открывает index.html в папке сам — дописываем его
+   к ссылкам на папки (catalog/armatura/ → catalog/armatura/index.html).
+   На хостинге этот код ничего не делает.
+   ========================================================= */
+if (location.protocol === 'file:') {
+  document.querySelectorAll('a[href]').forEach((a) => {
+    const href = a.getAttribute('href');
+    if (/^(https?:|mailto:|tel:|#)/.test(href)) return;
+    const [path, hash = ''] = href.split('#');
+    if (path === '' ) return;
+    if (path.endsWith('/')) a.setAttribute('href', `${path}index.html${hash ? '#' + hash : ''}`);
+  });
+}
+
+
+/* =========================================================
    Мобильное меню
    ========================================================= */
 const burger = document.getElementById('burger');
@@ -40,6 +57,23 @@ window.addEventListener('resize', () => {
 
 
 /* =========================================================
+   Счётчик «Весь каталог: N разделов, M позиций» — из данных каталога
+   ========================================================= */
+(function catalogCount() {
+  const el = document.querySelector('[data-catalog-count]');
+  if (!el || !window.CATALOG) return;
+  const plural = (n, one, few, many) => {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    return m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+  };
+  const sections = window.CATALOG.length;
+  const items = window.CATALOG.reduce((n, c) => n + c.items.length, 0);
+  el.textContent = `Весь каталог: ${sections} ${plural(sections, 'раздел', 'раздела', 'разделов')}, ${items} ${plural(items, 'позиция', 'позиции', 'позиций')}`;
+})();
+
+
+/* =========================================================
    Поиск по каталогу (только на главной)
    Данные — js/catalog-data.js. Ищем по названиям, разделам и маркам.
    ========================================================= */
@@ -50,7 +84,7 @@ const INDEX = (window.CATALOG || []).flatMap((cat) => cat.items.map((item) => ({
   c: cat.title,
   h: `catalog.html#${item.id}`,
   nt: norm(item.name),
-  nk: norm(`${cat.title} ${item.note || ''} ${(item.grades || []).join(' ')} ${(cat.grades || []).join(' ')}`),
+  nk: norm(`${cat.title} ${item.gost || ''} ${item.note || ''} ${(item.grades || []).join(' ')} ${(cat.grades || []).join(' ')} ${(item.sizes || []).join(' ')}`),
 })));
 // Услуги — ведут на блок металлообработки
 [['Резка металла', 'резка плазменная лазерная газовая гидроабразивная в размер'],
@@ -59,7 +93,7 @@ const INDEX = (window.CATALOG || []).flatMap((cat) => cat.items.map((item) => ({
   .forEach(([t, k]) => INDEX.push({ t, c: 'Металлообработка', h: '#metalwork', nt: norm(t), nk: norm(k) }));
 
 function search(query) {
-  const words = norm(query).split(/[\s,]+/).filter(Boolean);
+  const words = norm(query).split(/\s+/).filter(Boolean);
   if (!words.length) return [];
   return INDEX
     .map((item) => {
@@ -258,3 +292,15 @@ if (toTop) {
     toTop.classList.toggle('is-visible', window.scrollY > 600);
   }, { passive: true });
 }
+
+/* =========================================================
+   Партнёры: фото на фоне карточки — только если файл есть
+   ========================================================= */
+document.querySelectorAll('.clients__grid [data-photo]').forEach((card) => {
+  const img = new Image();
+  img.onload = () => {
+    card.style.setProperty('--photo', `url("${img.src}")`);
+    card.classList.add('has-photo');
+  };
+  img.src = card.dataset.photo;
+});

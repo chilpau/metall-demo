@@ -10,8 +10,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@n8n/chat@1.38.6/dist/style.css">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20261019-1653">
+  <!-- SEO -->
+  <link rel="canonical" href="https://tmstal.ru/privacy.html">
+  <meta name="theme-color" content="#12161f">
 </head>
 <body>
 
@@ -55,12 +57,18 @@
               <div class="dropdown">
                 <a href="catalog.html#cat-pipes">Трубный прокат</a>
                 <a href="catalog.html#cat-sheet">Листовой прокат</a>
+                <a href="catalog.html#cat-shaped">Фасонный прокат</a>
+                <a href="catalog.html#cat-long">Сортовой прокат</a>
                 <a href="catalog.html#cat-rebar">Арматура</a>
                 <a href="catalog.html#cat-wire">Катанка</a>
+                <a href="catalog.html#cat-structural">Конструкционная и инструментальная сталь</a>
                 <a href="catalog.html#cat-stainless">Нержавеющая сталь</a>
                 <a href="catalog.html#cat-color">Цветные металлы</a>
                 <a href="catalog.html#cat-fittings">Трубопроводная арматура</a>
                 <a href="catalog.html#cat-mesh">Металлическая сетка</a>
+                <a href="catalog.html#cat-polymers">Полимеры</a>
+                <a href="catalog.html#cat-cable">Кабель и провода</a>
+                <a class="dropdown__all" href="catalog.html">Весь каталог →</a>
               </div>
             </li>
             <li class="nav__item nav__item--drop">
@@ -79,7 +87,7 @@
                 Рассчитать стоимость
               </a>
             </li>
-            <li class="nav__item"><a class="nav__link" href="index.html#reviews">Отзывы</a></li>
+            <li class="nav__item"><a class="nav__link" href="index.html#partners">Партнёры</a></li>
             <li class="nav__item nav__item--mobile"><a class="nav__link" href="index.html#wholesale">Оптовым клиентам</a></li>
             <li class="nav__item"><a class="nav__link" href="index.html#contacts">Контакты</a></li>
           </ul>
@@ -127,7 +135,7 @@
         <p>1.2. Оператор персональных данных — Общество с ограниченной ответственностью «ТМ Сталь» (далее — Оператор):</p>
         <ul class="legal__requisites">
           <li>ИНН 5261136703, КПП 526101001, ОГРН 1245200011594;</li>
-          <li>адрес: 603107, Нижегородская область, г. Нижний Новгород, пр-кт Гагарина, д. 178/1, помещ. № 710;</li>
+          <li>юридический адрес: 603107, Нижегородская область, г. Нижний Новгород, пр-кт Гагарина, д. 178/1, помещ. № 710;</li>
           <li>e-mail: <a href="mailto:zakaz@tmstal.ru">zakaz@tmstal.ru</a>, телефон: <a href="tel:88006001396">8 800 600-13-96</a>.</li>
         </ul>
         <p>1.3. Отправляя форму на Сайте и отмечая согласие на обработку персональных данных, пользователь подтверждает, что ознакомился с настоящей Политикой и согласен с ней.</p>
@@ -189,13 +197,19 @@
         <img class="footer__logo" src="img/logo-white.png" alt="ТМ Сталь" width="570" height="406">
         <p>Поставка металлопроката, полимеров и кабельной продукции оптом и в розницу по всей России.</p>
       </div>
-      <div>
-        <h4>Каталог</h4>
-        <a href="catalog.html#cat-pipes">Трубный прокат</a>
-        <a href="catalog.html#cat-sheet">Листовой прокат</a>
-        <a href="catalog.html#cat-rebar">Арматура</a>
-        <a href="catalog.html#cat-stainless">Нержавеющая сталь</a>
-        <a href="catalog.html#cat-color">Цветные металлы</a>
+      <div class="footer__popular">
+        <h4>Популярное</h4>
+        <a href="catalog/armatura/">Арматура</a>
+        <a href="catalog/truba-profilnaya/">Труба профильная</a>
+        <a href="catalog/truba-stalnaya/">Труба стальная</a>
+        <a href="catalog/shveller/">Швеллер</a>
+        <a href="catalog/dvutavr/">Двутавр</a>
+        <a href="catalog/ugolok/">Уголок</a>
+        <a href="catalog/list-metallicheskiy/">Лист металлический</a>
+        <a href="catalog/nerzhaveyushchaya-stal/">Нержавеющая сталь</a>
+        <a href="catalog/kabel/">Кабель</a>
+        <a href="catalog/setka/">Сетка</a>
+        <a href="catalog.html">Весь каталог →</a>
       </div>
       <div>
         <h4>Услуги</h4>
@@ -221,12 +235,11 @@
     <svg class="icon" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
   </a>
 
-  <script src="js/catalog-data.js"></script>
-  <script src="js/prices.js"></script>
-  <script src="js/main.js"></script>
-  <script src="js/cart.js"></script>
-  <script src="js/reviews-data.js"></script>
-  <script src="js/reviews.js"></script>
-  <script type="module" src="js/chat.js"></script>
+  <script src="js/analytics.js?v=20261019-1653"></script>
+  <script src="js/catalog-data.js?v=20261019-1653"></script>
+  <script src="js/prices.js?v=20261019-1653"></script>
+  <script src="js/main.js?v=20261019-1653"></script>
+  <script src="js/cart.js?v=20261019-1653"></script>
+  <script src="js/chat.js?v=20261019-1653" defer></script>
 </body>
 </html>
