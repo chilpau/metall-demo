@@ -1380,7 +1380,8 @@ a.topbar__item:hover { color: var(--white); }
   .clients__grid li.has-photo { min-height: 190px; }
   .clients__grid b { font-size: 15px; }
   .clients__grid span:last-child { font-size: 13px; }
-  
+}
+
 /* карта: статичный вид + своя метка + кнопки */
 .map { position: relative; height: 300px; }
 .map iframe { pointer-events: none; }
