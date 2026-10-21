@@ -74,6 +74,25 @@ window.addEventListener('resize', () => {
 
 
 /* =========================================================
+   Поиск на телефоне: при нажатии на поле поднимаем его наверх экрана —
+   иначе выезжающая клавиатура закрывает результаты (жалоба заказчика с Android, 21.10.2026)
+   ========================================================= */
+const isPhone = () => window.matchMedia('(max-width: 768px)').matches;
+window.liftOnFocus = (field, anchor = field) => {
+  field.addEventListener('focus', () => {
+    if (!isPhone()) return;
+    document.body.classList.add('is-searching');
+    setTimeout(() => {
+      const nav = document.querySelector('.navbar');
+      const offset = (nav ? Math.max(nav.getBoundingClientRect().bottom, 0) : 0) + 12;
+      window.scrollTo({ top: anchor.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
+    }, 300); // ждём, пока выедет клавиатура
+  });
+  field.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('is-searching'), 200));
+};
+
+
+/* =========================================================
    Поиск по каталогу (только на главной)
    Данные — js/catalog-data.js. Ищем по названиям, разделам и маркам.
    ========================================================= */
@@ -152,7 +171,19 @@ function render() {
 
   list.hidden = false;
   input.setAttribute('aria-expanded', 'true');
+  fitResults();
 }
+
+// Список результатов не уходит под клавиатуру: высота — сколько места до низа видимой области
+function fitResults() {
+  if (!isPhone() || list.hidden) { list.style.maxHeight = ''; return; }
+  const vv = window.visualViewport;
+  const visibleBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+  const room = visibleBottom - form.getBoundingClientRect().bottom - 16;
+  list.style.maxHeight = `${Math.min(360, Math.max(150, room))}px`;
+}
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitResults);
+window.addEventListener('scroll', fitResults, { passive: true });
 
 function closeResults() {
   list.hidden = true;
@@ -174,6 +205,7 @@ function go(item) {
   location.href = item.h;
 }
 
+window.liftOnFocus(input, form);
 input.addEventListener('input', render);
 input.addEventListener('focus', () => input.value.trim() && render());
 input.addEventListener('keydown', (e) => {
@@ -296,11 +328,25 @@ if (toTop) {
 /* =========================================================
    Партнёры: фото на фоне карточки — только если файл есть
    ========================================================= */
-document.querySelectorAll('.clients__grid [data-photo]').forEach((card) => {
+// Фоны грузим, только когда блок партнёров подъезжает к экрану, — не тормозят открытие страницы
+const partnerCards = document.querySelectorAll('.clients__grid [data-photo]');
+const loadPhoto = (card) => {
   const img = new Image();
   img.onload = () => {
     card.style.setProperty('--photo', `url("${img.src}")`);
     card.classList.add('has-photo');
   };
   img.src = card.dataset.photo;
-});
+};
+if (partnerCards.length) {
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      partnerCards.forEach(loadPhoto);
+      io.disconnect();
+    }, { rootMargin: '600px 0px' });
+    io.observe(document.querySelector('.clients__grid'));
+  } else {
+    partnerCards.forEach(loadPhoto);
+  }
+}

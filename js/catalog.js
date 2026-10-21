@@ -24,10 +24,6 @@
   // Разделы, позиции и меню уже лежат в catalog.html готовым HTML —
   // их генерирует tools/catalog/build_catalog.py, чтобы каталог видели поисковики.
 
-  const pdfs = [window.CATALOG_PDF];
-  document.getElementById('pdf-links').innerHTML = pdfs.map((p) =>
-    `<a class="btn btn--ghost" href="${encodeURI(p.url)}" target="_blank" rel="noopener">${DOC} Каталог «${esc(p.name)}», PDF</a>`).join('');
-
   const total = CATALOG.reduce((n, c) => n + c.items.length, 0);
   const stats = document.getElementById('catalog-stats');
   const setStats = (found) => {
@@ -88,6 +84,7 @@
   }
 
   input.addEventListener('input', applyFilter);
+  if (window.liftOnFocus) window.liftOnFocus(input, input.closest('.filter') || input);
   clear.addEventListener('click', () => { input.value = ''; applyFilter(); input.focus(); });
 
   /* ---------- подсветка текущего раздела в меню ---------- */
