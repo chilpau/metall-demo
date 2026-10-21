@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261019-1653">
+  <link rel="stylesheet" href="css/style.css?v=20261021-1848">
   <!-- SEO -->
   <link rel="canonical" href="https://tmstal.ru/">
   <meta name="theme-color" content="#12161f">
@@ -400,7 +400,31 @@
     </div>
   </section>
 
+  <!-- Наши отгрузки: настоящие фото заказчика (Андрей, 21.10.2026), обработка — tools/process_photos.py -->
+  <section class="shipments" id="shipments">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Отгрузки</span>
+          <h2 class="section-title">Так мы отгружаем металл</h2>
+          <p class="section-lead">Отгружаем со складов и напрямую с заводов-производителей. Металл аккуратно укладываем и закрепляем в кузове.</p>
+        </div>
+      </div>
+      <ul class="shipments__grid">
+        <li><img src="img/shipments/1.webp" width="640" height="480" loading="lazy" decoding="async" alt="Стальные трубы в фуре перед отгрузкой"></li>
+        <li><img src="img/shipments/2.webp" width="640" height="480" loading="lazy" decoding="async" alt="Бухты проволоки, закреплённые ремнями в кузове"></li>
+        <li><img src="img/shipments/3.webp" width="640" height="480" loading="lazy" decoding="async" alt="Металлопрокат в кузове машины"></li>
+        <li><img src="img/shipments/4.webp" width="640" height="480" loading="lazy" decoding="async" alt="Бухты катанки в фуре"></li>
+        <li><img src="img/shipments/5.webp" width="640" height="480" loading="lazy" decoding="async" alt="Пачка стальных труб на платформе"></li>
+        <li><img src="img/shipments/6.webp" width="640" height="480" loading="lazy" decoding="async" alt="Связка труб в кузове"></li>
+        <li><img src="img/shipments/7.webp" width="640" height="480" loading="lazy" decoding="async" alt="Погрузка стальных листов"></li>
+        <li><img src="img/shipments/8.webp" width="640" height="480" loading="lazy" decoding="async" alt="Погрузка ящиков с металлом погрузчиком"></li>
+      </ul>
+    </div>
+  </section>
+
   <!-- Партнёры (вместо отзывов, решение 19.10.2026): список клиентов и строка про ФЗ — из сообщения заказчика во ВК (13.10.2026).
+       20.10.2026 заказчик разрешил указать всех — показываем все 16 карточками.
        Подписи под названиями — общеизвестные сведения о самих предприятиях. Логотипы не ставим
        (нужно разрешение правообладателей) — только названия.
        Фон карточки — картинка из data-photo (img/partners/*.webp, промпты в tools/partners-prompts.md).
@@ -410,7 +434,7 @@
       <div class="section-head">
         <div>
           <span class="eyebrow">Наши партнёры</span>
-          <h2 class="section-title">Поставляем металл ведущим предприятиям России</h2>
+          <h2 class="section-title">Мы работаем с ведущими предприятиями России</h2>
           <p class="section-lead">Работаем по 223-ФЗ, 44-ФЗ и 275-ФЗ. Участвуем в тендерах на площадке АСТ ГОЗ.</p>
         </div>
         <ul class="clients__laws" aria-label="Закупки">
@@ -426,8 +450,15 @@
         <li data-photo="img/partners/alabuga.webp"><b>ОЭЗ «Алабуга»</b><span>Особая экономическая зона, Татарстан</span></li>
         <li data-photo="img/partners/tehmash.webp"><b>НПК «Техмаш»</b><span>Концерн «Технологии машиностроения»</span></li>
         <li data-photo="img/partners/kriogenmash.webp"><b>АО «Криогенмаш»</b><span>Криогенное оборудование</span></li>
+        <li data-photo="img/partners/barrikada.webp"><b>ПО «Баррикада»</b><span>Производственное объединение</span></li>
+        <li data-photo="img/partners/tehnodinamika.webp"><b>Холдинг «Технодинамика»</b><span>Холдинг в составе Ростеха</span></li>
+        <li data-photo="img/partners/burevestnik.webp"><b>ЦНИИ «Буревестник»</b><span>Научно-исследовательский институт</span></li>
+        <li data-photo="img/partners/amz.webp"><b>АО «АМЗ»</b><span>Арзамасский машиностроительный завод</span></li>
+        <li data-photo="img/partners/ahtuba.webp"><b>ПК «Ахтуба»</b><span>Производственная компания</span></li>
+        <li data-photo="img/partners/okeanpribor.webp"><b>Концерн «Океанприбор»</b><span>Морское приборостроение</span></li>
+        <li data-photo="img/partners/alekseev.webp"><b>ЦКБ по СПК им. Р.Е. Алексеева</b><span>Конструкторское бюро, Нижний Новгород</span></li>
+        <li data-photo="img/partners/nz70.webp"><b>НЗ 70-летия Победы</b><span>Нижегородский завод 70-летия Победы</span></li>
       </ul>
-      <p class="clients__more"><b>А также:</b> ПО «Баррикада», холдинг «Технодинамика», ЦНИИ «Буревестник», Арзамасский машиностроительный завод, ПК «Ахтуба», Концерн «Океанприбор», ЦКБ по СПК им. Р.Е. Алексеева, Нижегородский завод 70-летия Победы</p>
     </div>
   </section>
 
@@ -439,7 +470,7 @@
         <span class="eyebrow">Контакты</span>
         <h2 class="section-title">Режим работы</h2>
 
-        <!-- Режим работы отдела продаж — от заказчика (13.10.2026). Дни недели не указаны — уточнить. График складов заказчик просил не писать. -->
+        <!-- Режим работы офиса продаж — от заказчика (20.10.2026): пн–пт, 8:00–17:00. График складов заказчик просил не писать. -->
         <div class="schedule">
           <div class="schedule__card">
             <span class="schedule__icon">
@@ -449,7 +480,8 @@
               <b>Офис продаж</b>
               <span class="schedule__addr">Нижний Новгород, пр-т Гагарина, д. 178/1, помещение П13 (офис 512)</span>
               <dl class="schedule__hours">
-                <dt>Время работы</dt><dd>8:30 – 17:00</dd>
+                <dt>Пн – Пт</dt><dd>8:00 – 17:00</dd>
+                <dt>Сб, Вс</dt><dd>выходной</dd>
               </dl>
             </div>
           </div>
@@ -508,6 +540,10 @@
           <p>Да. «ТМ Сталь» продаёт металлопрокат, полимеры и кабельную продукцию как оптом, так и в розницу. Для крупных партий действуют выгодные оптовые цены.</p>
         </details>
         <details class="faq__item">
+          <summary>Есть ли минимальный объём заказа?</summary>
+          <p>Нет. Можно заказать любой объём — от одной позиции до крупной оптовой партии.</p>
+        </details>
+        <details class="faq__item">
           <summary>Как узнать цену и оформить заказ?</summary>
           <p>Позвоните по номеру <a href="tel:88006001396">8 800 600-13-96</a> (звонок по России бесплатный), напишите на <a href="mailto:zakaz@tmstal.ru">zakaz@tmstal.ru</a> или оставьте заявку через форму обратной связи на сайте.</p>
         </details>
@@ -559,6 +595,7 @@
         <a href="catalog/nerzhaveyushchaya-stal/">Нержавеющая сталь</a>
         <a href="catalog/kabel/">Кабель</a>
         <a href="catalog/setka/">Сетка</a>
+        <a href="catalog/marki-stali/">Марки стали</a>
         <a href="catalog.html">Весь каталог →</a>
       </div>
       <div>
@@ -586,11 +623,11 @@
     <svg class="icon" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
   </a>
 
-  <script src="js/analytics.js?v=20261019-1653"></script>
-  <script src="js/catalog-data.js?v=20261019-1653"></script>
-  <script src="js/prices.js?v=20261019-1653"></script>
-  <script src="js/main.js?v=20261019-1653"></script>
-  <script src="js/cart.js?v=20261019-1653"></script>
-  <script src="js/chat.js?v=20261019-1653" defer></script>
+  <script src="js/analytics.js?v=20261021-1848"></script>
+  <script src="js/catalog-data.js?v=20261021-1848"></script>
+  <script src="js/prices.js?v=20261021-1848"></script>
+  <script src="js/main.js?v=20261021-1848"></script>
+  <script src="js/cart.js?v=20261021-1848"></script>
+  <script src="js/chat.js?v=20261021-1848" defer></script>
 </body>
 </html>
