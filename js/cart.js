@@ -38,7 +38,7 @@
   // Единица по умолчанию: металл — тонны, кабель и трос — метры и т.д. Клиент может поменять.
   const DEFAULT_UNIT = {
     'cat-cable': 'м', 'cat-wires': 'м', 'cat-rope': 'м', 'cat-mesh': 'м²',
-    'cat-polymers': 'кг', 'cat-fasteners': 'кг', 'cat-fittings': 'шт',
+    'cat-polymers': 'кг', 'cat-fasteners': 'кг', 'cat-fittings': 'шт', 'cat-services': 'шт',
   };
   const byId = {};
   (window.CATALOG || []).forEach((cat) => cat.items.forEach((item) => {
@@ -46,6 +46,7 @@
     byId[item.id] = {
       name: item.name, cat: cat.title, grades: item.grades || cat.grades || [],
       gradeLabel: cat.gradeLabel || 'Марка', sizes: item.sizes || [], sizeLabel: item.sizeLabel || 'Размер',
+      hint: item.hint || '',
       unit: DEFAULT_UNIT[cat.id] || 'т',
     };
   }));
@@ -115,6 +116,10 @@
     <label class="consent">
       <input type="checkbox" name="consent" required id="${id}">
       <span>Согласен на обработку персональных данных в соответствии с <a href="${ROOT}privacy.html" target="_blank">политикой</a></span>
+    </label>
+    <label class="consent consent--ads">
+      <input type="checkbox" name="marketing" id="${id}-ads">
+      <span>Согласен получать информацию о товарах, ценах и акциях: звонки, SMS, письма и сообщения в мессенджерах (необязательно, можно отказаться в любой момент)</span>
     </label>`;
 
   document.body.insertAdjacentHTML('beforeend', `
@@ -270,7 +275,7 @@
               ${item.grades.map((g) => `<option${g === row.grade ? ' selected' : ''}>${esc(g)}</option>`).join('')}
             </select>` : '<span></span>'}
             <input class="cart-item__note" value="${esc(row.note)}" data-field="note"
-                   placeholder="${item.sizes.length ? `${esc(item.sizeLabel)}: выберите или впишите` : 'Размер, например 40×20×2 мм, 6 м'}"
+                   placeholder="${item.sizes.length ? `${esc(item.sizeLabel)}: выберите или впишите` : esc(item.hint || 'Размер, например 40×20×2 мм, 6 м')}"
                    ${item.sizes.length ? `list="sizes-${row.uid}"` : ''} aria-label="${esc(item.sizeLabel)}" autocomplete="off">
             ${item.sizes.length ? `<datalist id="sizes-${row.uid}">${item.sizes.map((z) => `<option value="${esc(z)}">`).join('')}</datalist>` : ''}
           </div>
@@ -413,6 +418,7 @@
       email: data.email || '',
       comment: data.comment || '',
       wholesale: type === 'order' && !!form.elements.wholesale && form.elements.wholesale.checked,
+      marketing: !!form.elements.marketing && form.elements.marketing.checked, // отдельное согласие на рекламные звонки и рассылки (38-ФЗ)
       website: data.website || '',      // ловушка для ботов
       elapsed: Date.now() - openedAt,   // боты отправляют мгновенно
       page: location.href,
@@ -467,6 +473,23 @@
   });
 
   window.cartUpdateBadges = updateBadges;
+  // для окна подбора размеров (js/picker.js): добавить готовую строку заявки
+  window.tmCart = {
+    units: UNITS,
+    unitOf: (id) => (byId[id] ? ((window.PRICES[id] && window.PRICES[id].unit) || byId[id].unit) : 'т'),
+    addRow({ id, grade = '', note = '', qty = '', unit }) {
+      if (!byId[id]) return false;
+      const same = cart.find((row) => row.id === id && row.grade === grade && row.note === note);
+      if (same) { if (qty) same.qty = qty; if (unit) same.unit = unit; }
+      else {
+        cart.push({ uid: uid(), id, grade, qty, unit: unit || window.tmCart.unitOf(id), note });
+        goal('add_to_request', { item: byId[id].name, grade, size: note });
+      }
+      save(); bump();
+      return true;
+    },
+    open: () => open(drawer),
+  };
   updateBadges();
 
   // ссылка вида site.ru/#calc сразу открывает нужное окно

@@ -97,6 +97,12 @@
       const active = navList.querySelector('.is-active');
       if (active && window.matchMedia('(max-width: 1024px)').matches) {
         navList.scrollTo({ left: active.offsetLeft - 16, behavior: 'smooth' });
+      } else if (active && navList.scrollHeight > navList.clientHeight) {
+        // на компьютере меню прокручивается — держим активный раздел в видимой части
+        const top = active.offsetTop - navList.offsetTop, h = active.offsetHeight;
+        if (top < navList.scrollTop || top + h > navList.scrollTop + navList.clientHeight) {
+          navList.scrollTo({ top: top - navList.clientHeight / 3, behavior: 'smooth' });
+        }
       }
     });
   }, { rootMargin: '-30% 0px -60% 0px' });

@@ -105,11 +105,10 @@ const INDEX = (window.CATALOG || []).flatMap((cat) => cat.items.map((item) => ({
   nt: norm(item.name),
   nk: norm(`${cat.title} ${item.gost || ''} ${item.note || ''} ${(item.grades || []).join(' ')} ${(cat.grades || []).join(' ')} ${(item.sizes || []).join(' ')}`),
 })));
-// Услуги — ведут на блок металлообработки
-[['Резка металла', 'резка плазменная лазерная газовая гидроабразивная в размер'],
- ['Гибка металла', 'гибка листогиб трубогиб'],
- ['Металлоизделия по чертежам', 'металлоконструкции порошковая покраска изготовление']]
-  .forEach(([t, k]) => INDEX.push({ t, c: 'Металлообработка', h: '#metalwork', nt: norm(t), nk: norm(k) }));
+// Услуги (резка, гибка, металлоизделия) теперь в каталоге — в индекс попадают вместе с товарами.
+// Дополнительные слова, по которым их ищут:
+const SERVICE_WORDS = { 'svc-cut': 'резка в размер', 'svc-bend': 'листогиб трубогиб', 'svc-make': 'изготовление металлоконструкции' };
+INDEX.forEach((r) => { const id = r.h.split('#')[1]; if (SERVICE_WORDS[id]) r.nk += ' ' + norm(SERVICE_WORDS[id]); });
 
 function search(query) {
   const words = norm(query).split(/\s+/).filter(Boolean);
