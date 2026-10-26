@@ -9,13 +9,15 @@
  *   website   ловушка для ботов (должно быть пусто)
  *   elapsed   сколько мс прошло с открытия страницы
  *
- * Работает на любом хостинге с PHP (Beget, Timeweb, REG.RU и др.).
- * Если письма не доходят — уточните у хостинга, разрешена ли функция mail(),
- * и создайте на домене ящик, указанный в MAIL_FROM.
+ * Отправка:
+ *   • если рядом лежит mail-config.php с паролем ящика — письмо уходит через SMTP почты REG.RU
+ *     (настоящий ящик, реже попадает в спам). Образец — mail-config.example.php;
+ *   • иначе (или если SMTP не ответил) — обычной функцией mail() хостинга.
+ * Пароль в этом файле НЕ хранится. mail-config.php закрыт от скачивания в .htaccess.
  */
 
 const MAIL_TO   = 'zakaz@tmstal.ru';
-const MAIL_FROM = 'noreply@tmstal.ru';   // ящик на домене сайта
+const MAIL_FROM = 'zakaz@tmstal.ru';     // отправитель для mail(); для SMTP — ящик из mail-config.php
 const SITE_NAME = 'ТМ Сталь';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -93,31 +95,99 @@ if ($type === 'order') {
     $subject = 'Заказ звонка с сайта';
 }
 
+$subject .= ' — ' . ($name !== '' ? $name . ', ' : '') . $phone;
+
 $lines[] = 'КОНТАКТЫ:';
 $lines[] = 'Имя: ' . ($name !== '' ? $name : '—');
 $lines[] = 'Телефон: ' . $phone;
 if ($email !== '')   $lines[] = 'Email: ' . $email;
+$lines[] = 'Согласие на звонки и рассылки о товарах и акциях: ' . (!empty($data['marketing']) ? 'ДА' : 'нет');
 if ($comment !== '') { $lines[] = ''; $lines[] = 'КОММЕНТАРИЙ:'; $lines[] = $comment; }
 $lines[] = '';
 $lines[] = 'Страница: ' . $page;
 $lines[] = 'Время: ' . date('d.m.Y H:i');
 
-$headers = [
-    'From: =?UTF-8?B?' . base64_encode(SITE_NAME) . '?= <' . MAIL_FROM . '>',
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: 8bit',
-];
-// Reply-To — только проверенный адрес, чтобы нельзя было подмешать заголовки
-if ($email !== '') {
-    $headers[] = 'Reply-To: ' . $email;
+$body = implode("\r\n", $lines);
+
+/* ---------- SMTP (почта REG.RU) ---------- */
+function smtp_send(array $cfg, string $to, string $subject, string $body, string $replyTo): bool {
+    $host = $cfg['host'] ?? 'mail.hosting.reg.ru';
+    $port = (int) ($cfg['port'] ?? 465);
+    $user = $cfg['user'] ?? '';
+    $from = $cfg['from'] ?? $user;
+    $remote = ($port === 465 ? 'ssl://' : 'tcp://') . $host . ':' . $port;
+    $fp = @stream_socket_client($remote, $errno, $errstr, 15);
+    if (!$fp) { error_log("send.php: SMTP $remote — $errstr"); return false; }
+    stream_set_timeout($fp, 15);
+
+    $read = function () use ($fp): string {
+        $out = '';
+        while (($line = fgets($fp, 515)) !== false) {
+            $out .= $line;
+            if (strlen($line) < 4 || $line[3] === ' ') break;   // последняя строка ответа: «250 …»
+        }
+        return $out;
+    };
+    $cmd = function (string $c, array $ok) use ($fp, $read): bool {
+        if ($c !== '') fwrite($fp, $c . "\r\n");
+        $r = $read();
+        if (!in_array((int) substr($r, 0, 3), $ok, true)) {
+            // в журнал — только название команды, без логина/пароля и текста письма
+            $what = $c === '' ? 'connect' : (preg_match('/^(EHLO|STARTTLS|AUTH|MAIL|RCPT|DATA)/', $c, $m) ? $m[1] : 'data');
+            error_log("send.php: SMTP $what → " . trim($r));
+            return false;
+        }
+        return true;
+    };
+
+    $ehlo = 'EHLO ' . ($_SERVER['SERVER_NAME'] ?? 'tmstal.ru');
+    $okConn = $cmd('', [220]) && $cmd($ehlo, [250]);
+    if ($okConn && $port === 587) {
+        $okConn = $cmd('STARTTLS', [220])
+            && stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)
+            && $cmd($ehlo, [250]);
+    }
+    $enc = fn(string $s): string => '=?UTF-8?B?' . base64_encode($s) . '?=';
+    $msg = implode("\r\n", array_filter([
+        'Date: ' . date('r'),
+        'From: ' . $enc(SITE_NAME . ' — сайт') . " <$from>",
+        "To: <$to>",
+        $replyTo !== '' ? "Reply-To: <$replyTo>" : '',
+        'Subject: ' . $enc($subject),
+        'MIME-Version: 1.0',
+        'Content-Type: text/plain; charset=UTF-8',
+        'Content-Transfer-Encoding: base64',
+    ])) . "\r\n\r\n" . chunk_split(base64_encode($body));
+
+    $ok = $okConn
+        && $cmd('AUTH LOGIN', [334]) && $cmd(base64_encode($user), [334]) && $cmd(base64_encode($cfg['pass']), [235])
+        && $cmd("MAIL FROM:<$from>", [250]) && $cmd("RCPT TO:<$to>", [250, 251])
+        && $cmd('DATA', [354]) && $cmd($msg . "\r\n.", [250]);
+    @fwrite($fp, "QUIT\r\n");
+    fclose($fp);
+    return $ok;
 }
 
-$sent = mail(
-    MAIL_TO,
-    '=?UTF-8?B?' . base64_encode($subject) . '?=',
-    implode("\r\n", $lines),
-    implode("\r\n", $headers)
-);
+$sent = false;
+$cfgFile = __DIR__ . '/mail-config.php';
+$cfg = is_file($cfgFile) ? (include $cfgFile) : null;
+if (is_array($cfg) && !empty($cfg['user']) && !empty($cfg['pass'])) {
+    $sent = smtp_send($cfg, MAIL_TO, $subject, $body, $email);
+}
+
+/* ---------- запасной вариант: mail() хостинга ---------- */
+if (!$sent) {
+    $headers = [
+        'From: =?UTF-8?B?' . base64_encode(SITE_NAME) . '?= <' . MAIL_FROM . '>',
+        'MIME-Version: 1.0',
+        'Content-Type: text/plain; charset=UTF-8',
+        'Content-Transfer-Encoding: 8bit',
+    ];
+    // Reply-To — только проверенный адрес, чтобы нельзя было подмешать заголовки
+    if ($email !== '') {
+        $headers[] = 'Reply-To: ' . $email;
+    }
+    $sent = mail(MAIL_TO, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, implode("\r\n", $headers), '-f' . MAIL_FROM);
+}
 
 reply($sent ? 200 : 500, ['ok' => $sent]);
