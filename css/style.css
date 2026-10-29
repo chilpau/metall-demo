@@ -254,6 +254,20 @@ a.topbar__item:hover { color: var(--white); }
   background: var(--spark);
   box-shadow: 0 0 0 4px var(--spark-soft), 0 0 12px var(--spark);
 }
+.hero__laws {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: -6px 0 26px;
+  color: rgba(255,255,255,.7); font-size: 13px; text-decoration: none;
+}
+.hero__laws b {
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08);
+  color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap;
+  transition: background .2s, border-color .2s;
+}
+.hero__laws span + b { margin-left: 2px; }
+.hero__laws b + span { margin-left: 6px; }
+.hero__laws:hover b { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
 .hero__title {
   margin: 22px 0 20px;
   font-size: clamp(28px, 4.2vw + 14px, 60px);
